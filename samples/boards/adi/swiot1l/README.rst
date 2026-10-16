@@ -11,6 +11,8 @@ with the static IPv4 address ``192.168.97.40/16``, the same one used by the
 Analog Devices no-OS firmware for this board. The green LED follows the T1L
 link state and the network shell is available on the console.
 
+The MAX14906 digital outputs can be driven from the GPIO shell.
+
 Requirements
 ************
 
@@ -40,3 +42,12 @@ Sample Output
 
 The board then answers ping from the link partner, and ``net iface``,
 ``net ping`` and ``net arp`` can be used from the shell.
+
+To drive a load wired to MAX14906 channel 1 (DOI1), configure the first pin
+of the ``max14906`` GPIO controller as an output and set it:
+
+.. code-block:: console
+
+   uart:~$ gpio conf max14906 0 o
+   uart:~$ gpio set max14906 0 1
+   uart:~$ gpio set max14906 0 0
