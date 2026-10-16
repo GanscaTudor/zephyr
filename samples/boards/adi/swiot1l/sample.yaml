@@ -1,11 +1,19 @@
 sample:
   name: AD-SWIOT1L-SL 10BASE-T1L
+common:
+  platform_allow:
+    - ad_swiot1l_sl
+  integration_platforms:
+    - ad_swiot1l_sl
+  tags:
+    - net
+    - ethernet
 tests:
-  sample.boards.adi.swiot1l:
-    platform_allow:
-      - ad_swiot1l_sl
-    integration_platforms:
-      - ad_swiot1l_sl
+  sample.boards.adi.swiot1l: {}
+  sample.boards.adi.swiot1l.iiod:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-iiod.conf
+    modules:
+      - libiio
     tags:
-      - net
-      - ethernet
+      - iio
