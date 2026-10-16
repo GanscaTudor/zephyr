@@ -1,0 +1,11 @@
+sample:
+  name: AD-SWIOT1L-SL 10BASE-T1L
+tests:
+  sample.boards.adi.swiot1l:
+    platform_allow:
+      - ad_swiot1l_sl
+    integration_platforms:
+      - ad_swiot1l_sl
+    tags:
+      - net
+      - ethernet
