@@ -88,6 +88,15 @@ default of the ADIN1110 driver.
 The ``port1`` MAC address is the one used by the Analog Devices no-OS firmware
 for this board. Change it if several boards share the same network.
 
+Industrial digital I/O
+----------------------
+
+The MAX14906 quad-channel industrial digital I/O is connected to SPI1 (P1.26 SCK,
+P1.28 MISO, P1.29 MOSI, P1.27 CS3) and is exposed as the ``max14906`` GPIO
+controller, one GPIO per channel. Its EN and SYNCH pins are on P1.25 and P3.6.
+The DOI1 to DOI4 direct control inputs are held low by GPIO hogs, so the channel
+states are only set over SPI.
+
 Programming and Debugging
 *************************
 
