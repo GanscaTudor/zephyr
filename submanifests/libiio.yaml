@@ -1,0 +1,8 @@
+# libiio, for the IIOD server used by samples/boards/adi/swiot1l
+
+manifest:
+  projects:
+    - name: libiio
+      url: https://github.com/analogdevicesinc/libiio
+      revision: 48893bc9008c23c5d50d21093272ade9651e52fd
+      path: modules/lib/libiio
