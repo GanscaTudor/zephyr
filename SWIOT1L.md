@@ -183,7 +183,23 @@ ping 192.168.97.40
 
 ### IIO
 
-With the libiio command line tools on the host:
+> **The host needs libiio 1.0.** The IIOD server of this firmware only speaks
+> the libiio 1.0 protocol. libiio 0.x clients (for example the 0.26
+> `iio_info.exe` that older installers put in `C:\Windows\System32`, or the
+> `libiio0` Debian/Raspberry Pi OS package) fail with
+> `Unable to create IIO context ip:192.168.97.40: Broken pipe (32)`, even
+> though ping works.
+>
+> - Windows: download `Windows.zip` from the
+>   [libiio v1.0.0 release](https://github.com/analogdevicesinc/libiio/releases/tag/v1.0.0)
+>   and run the tools from `Windows-VS-2022-x64\Release`, or install
+>   `libiio-1.0.0...-setup.exe` from the same release.
+> - Linux / Raspberry Pi: build libiio 1.0, see
+>   [section 6](#6-use-it-from-the-raspberry-pi).
+>
+> `iio_info -V` must report `Libiio version: 1.0`.
+
+With the libiio 1.0 command line tools on the host:
 
 ```
 iio_info -u ip:192.168.97.40
@@ -204,8 +220,8 @@ iio_attr -u ip:192.168.97.40 -c max14906 voltage0 raw 0
 ```
 
 `samples/boards/adi/swiot1l/scripts` has two host scripts that do the same as
-the fan panel of `main_app.py` (they need `pip install pylibiio` and the
-libiio library):
+the fan panel of `main_app.py`. They need the libiio 1.0 library and
+`pip install pylibiio` (version 1.0):
 
 - `swiot1l_fan_panel.py`: command line, asks for a duty cycle.
 - `swiot1l_app.py`: Tkinter window with a ping status and the fan control.
@@ -217,19 +233,47 @@ python swiot1l_app.py --ip 192.168.97.40
 ## 6. Use it from the Raspberry Pi
 
 The board keeps the IP address, the MAC address and the IIO device names of
-the no-OS firmware, so the Raspberry Pi side does not change:
+the no-OS firmware, so `main_app.py` itself does not change. Two things on the
+Pi may have to:
+
+1. **libiio 1.0.** If the Pi has the `libiio0` package (libiio 0.x), build and
+   install libiio 1.0:
+
+   ```bash
+   sudo apt install -y build-essential cmake git libxml2-dev libzstd-dev
+   git clone --depth 1 --branch v1.0.0 https://github.com/analogdevicesinc/libiio.git
+   cd libiio && mkdir build && cd build
+   cmake -DWITH_USB_BACKEND=OFF -DHAVE_DNS_SD=OFF ..
+   make -j"$(nproc)"
+   sudo make install
+   sudo ldconfig
+   iio_info -V                  # must report Libiio version: 1.0
+   iio_info -u ip:192.168.97.40
+   ```
+
+2. **pyadi-iio with the `adi.swiot` class.** `main_app.py` uses `adi.swiot`
+   and `adi.max14906`. `adi.swiot` is on the `swiot_tw` branch of pyadi-iio
+   (the `release/ad-swiot1l-sl` branch renamed it to `adi.swiot1l`, which
+   `main_app.py` does not use):
+
+   ```bash
+   pip install git+https://github.com/analogdevicesinc/pyadi-iio.git@swiot_tw
+   ```
+
+   This also installs `pylibiio` 1.0, the Python bindings for libiio 1.0.
+
+Then:
 
 1. The Pi T1L interface keeps its `192.168.97.x/16` address.
-2. `ping 192.168.97.40` must answer.
-3. `main_app.py` uses `adi.swiot` and `adi.max14906`, which are only in the
-   `release/ad-swiot1l-sl` branch of pyadi-iio:
-
-   ```
-   pip install git+https://github.com/analogdevicesinc/pyadi-iio.git@release/ad-swiot1l-sl
-   ```
-
-4. Start `main_app.py`, press **Connect** on the SWIOT1L panel, set a duty
+2. `ping 192.168.97.40` must answer, and `iio_info -u ip:192.168.97.40` must
+   list `ad74413r`, `max14906` and `swiot`.
+3. Start `main_app.py`, press **Connect** on the SWIOT1L panel, set a duty
    cycle and press **Set**.
+
+The exact connect and PWM sequence of the `main_app.py` SWIOT1L panel was
+tested against this firmware with pyadi-iio `swiot_tw`, pylibiio 1.0 and
+libiio 1.0 on a Windows host. The Raspberry Pi build of libiio above was not
+tested.
 
 Only the fan path is backed by hardware: the `ad74413r` device has no
 channels yet, so panels that read the AD74413R get no data.
@@ -247,7 +291,10 @@ channels yet, so panels that read the AD74413R get no data.
 | Console works but ping fails and `net iface` says `oper=UP` | Check the T1L cable. With a USB to T1L converter, unplug and replug it: it can stop transmitting after a link loss. |
 | `eth_adin2111: Failed to communicate over SPI` | The ADIN1110 straps were not latched. Power cycle the board. |
 | `gpio_max14906: ... error detected` and `max14906` not ready | The MAX14906 driver fix of this branch is missing; check that you are on `swiot1l/integration`. |
-| `iio_info` cannot connect | The firmware was built without `overlay-iiod.conf`, or TCP port 30431 is blocked. |
+| `Unable to create IIO context ...: Broken pipe (32)` while ping works | The host libiio is 0.x. Use libiio 1.0, see [IIO](#iio). |
+| `iio_info` cannot connect at all | The firmware was built without `overlay-iiod.conf`, or TCP port 30431 is blocked. |
+| `module 'adi' has no attribute 'swiot'` | pyadi-iio from the wrong branch. Install the `swiot_tw` branch, see section 6. |
+| `libiio version 1.x required` from pylibiio | An old `libiio.so` (0.x) is found first. Remove the `libiio0`/`libiio-dev` packages or run `sudo ldconfig` after installing libiio 1.0. |
 
 ## 8. What is on this branch
 
