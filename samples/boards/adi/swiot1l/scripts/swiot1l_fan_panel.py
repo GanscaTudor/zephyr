@@ -32,8 +32,10 @@ import threading
 import time
 
 # On Windows, pylibiio 1.0.0 calls ctypes.util.find_library("c"), which
-# returns None there (there is no POSIX libc to find by that name). Point it
-# at msvcrt.dll before importing iio. Not needed on Linux.
+# returns None there (there is no POSIX libc to find by that name). It uses
+# that library to free() memory allocated by libiio, so it must be the C
+# runtime libiio is built against: ucrtbase.dll for the official MSVC build.
+# Not needed on Linux.
 if sys.platform == "win32":
     import ctypes.util
 
@@ -41,7 +43,7 @@ if sys.platform == "win32":
 
     def _patched_find_library(name):
         if name == "c":
-            return "msvcrt.dll"
+            return "ucrtbase.dll"
         return _orig_find_library(name)
 
     ctypes.util.find_library = _patched_find_library
